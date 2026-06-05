@@ -1,5 +1,40 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
-  <rect width="512" height="512" rx="80" fill="#0d1117"/>
-  <text x="256" y="200" text-anchor="middle" font-size="160" font-family="sans-serif" fill="#e8925a" font-weight="bold">강원</text>
-  <text x="256" y="380" text-anchor="middle" font-size="160" font-family="sans-serif" fill="#a371f7" font-weight="bold">충북</text>
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#1f1208"/>
+      <stop offset="100%" style="stop-color:#130a1f"/>
+    </linearGradient>
+    <linearGradient id="line" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#e8925a"/>
+      <stop offset="100%" style="stop-color:#a371f7"/>
+    </linearGradient>
+  </defs>
+
+  <!-- 배경 -->
+  <rect width="512" height="512" rx="100" fill="url(#bg)"/>
+
+  <!-- 상단 장식선 -->
+  <rect x="60" y="72" width="392" height="5" rx="2.5" fill="url(#line)" opacity="0.7"/>
+
+  <!-- 대기 파형 (물결) -->
+  <path d="M60 200 Q110 170 160 200 Q210 230 260 200 Q310 170 360 200 Q410 230 452 200"
+        stroke="#e8925a" stroke-width="6" fill="none" opacity="0.5" stroke-linecap="round"/>
+  <path d="M60 230 Q110 200 160 230 Q210 260 260 230 Q310 200 360 230 Q410 260 452 230"
+        stroke="#a371f7" stroke-width="6" fill="none" opacity="0.4" stroke-linecap="round"/>
+
+  <!-- 강원 텍스트 -->
+  <text x="256" y="330" text-anchor="middle"
+        font-family="'Apple SD Gothic Neo','Malgun Gothic',sans-serif"
+        font-size="130" font-weight="900" fill="#e8925a" letter-spacing="-4">강원</text>
+
+  <!-- 구분선 -->
+  <rect x="140" y="348" width="232" height="3" rx="1.5" fill="url(#line)" opacity="0.5"/>
+
+  <!-- 충북 텍스트 -->
+  <text x="256" y="445" text-anchor="middle"
+        font-family="'Apple SD Gothic Neo','Malgun Gothic',sans-serif"
+        font-size="130" font-weight="900" fill="#a371f7" letter-spacing="-4">충북</text>
+
+  <!-- 하단 장식선 -->
+  <rect x="60" y="468" width="392" height="5" rx="2.5" fill="url(#line)" opacity="0.4"/>
 </svg>
