@@ -1,0 +1,21 @@
+{
+  "name": "대기측정망 · 강원/충북",
+  "short_name": "강원충북대기",
+  "description": "강원도/충청북도 대기질 실시간 모니터링",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "theme_color": "#0d1117",
+  "background_color": "#0d1117",
+  "lang": "ko",
+  "categories": ["productivity", "utilities"],
+  "icons": [
+    {
+      "src": "icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

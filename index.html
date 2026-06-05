@@ -1,0 +1,610 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>대기측정망 · 강원/충북</title>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#0d1117">
+<script>
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => navigator.serviceWorker.register('./sw.js'));
+  }
+</script>
+<style>
+  :root {
+    --bg: #0d1117;
+    --surface: #161b22;
+    --surface2: #21262d;
+    --border: #30363d;
+    --text: #e6edf3;
+    --text2: #8b949e;
+    --accent-gw: #e8925a;   /* 강원 주황 */
+    --accent-cb: #a371f7;   /* 충북 보라 */
+    --red: #f85149;
+    --orange: #d29922;
+    --green: #3fb950;
+    --muted: #484f58;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Pretendard', 'Apple SD Gothic Neo', -apple-system, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    font-size: 14px;
+  }
+
+  /* ── 헤더 ── */
+  header {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 12px 16px;
+    position: sticky; top: 0; z-index: 100;
+  }
+  .header-row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+  .brand { font-size: 16px; font-weight: 700; letter-spacing: -0.3px; }
+  .brand-gw { color: var(--accent-gw); }
+  .brand-cb { color: var(--accent-cb); }
+  .brand-sep { color: var(--muted); }
+  .sub { font-size: 11px; color: var(--text2); margin-left: auto; }
+  .refresh-btn {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    color: var(--text);
+    padding: 4px 10px;
+    border-radius: 6px;
+    font-size: 12px;
+    cursor: pointer;
+    transition: background .15s;
+  }
+  .refresh-btn:hover { background: var(--border); }
+  .last-update { font-size: 11px; color: var(--text2); }
+
+  /* ── 탭 ── */
+  .tabs {
+    display: flex;
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    overflow-x: auto;
+    position: sticky; top: 53px; z-index: 99;
+  }
+  .tab {
+    padding: 10px 16px;
+    font-size: 13px;
+    color: var(--text2);
+    cursor: pointer;
+    white-space: nowrap;
+    border-bottom: 2px solid transparent;
+    transition: color .15s;
+  }
+  .tab.active { color: var(--text); border-bottom-color: var(--accent-gw); }
+  .tab-badge {
+    display: inline-block;
+    background: var(--red);
+    color: #fff;
+    font-size: 10px;
+    font-weight: 700;
+    padding: 1px 5px;
+    border-radius: 10px;
+    margin-left: 4px;
+    vertical-align: middle;
+  }
+
+  /* ── 콘텐츠 ── */
+  .content { padding: 12px 16px; max-width: 900px; margin: 0 auto; }
+
+  /* ── 알림 카드 ── */
+  .alert-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 12px;
+    margin-bottom: 8px;
+    border-left: 3px solid var(--red);
+  }
+  .alert-card.warn { border-left-color: var(--orange); }
+  .alert-title { font-size: 13px; font-weight: 600; margin-bottom: 4px; display: flex; align-items: center; gap: 8px; }
+  .alert-vals { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 6px; }
+  .val-chip {
+    font-size: 11px;
+    padding: 2px 7px;
+    border-radius: 4px;
+    font-weight: 600;
+  }
+  .val-chip.danger { background: rgba(248,81,73,.2); color: var(--red); }
+  .val-chip.warn { background: rgba(210,153,34,.2); color: var(--orange); }
+  .val-chip.na { background: var(--surface2); color: var(--muted); }
+
+  /* ── 지역 구분 헤더 ── */
+  .region-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: 16px 0 8px;
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--text2);
+    letter-spacing: .3px;
+  }
+  .region-dot { width: 8px; height: 8px; border-radius: 50%; }
+  .dot-gw { background: var(--accent-gw); }
+  .dot-cb { background: var(--accent-cb); }
+
+  /* ── 시/군 그룹 ── */
+  .city-group { margin-bottom: 12px; }
+  .city-label {
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--text2);
+    padding: 4px 0;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 6px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .city-count { color: var(--muted); font-weight: 400; }
+
+  /* ── 측정소 행 ── */
+  .station-row {
+    display: grid;
+    grid-template-columns: 1fr repeat(6, 52px);
+    gap: 4px;
+    align-items: center;
+    padding: 6px 8px;
+    border-radius: 6px;
+    margin-bottom: 3px;
+    background: var(--surface);
+    border: 1px solid transparent;
+    transition: border-color .15s;
+  }
+  .station-row:hover { border-color: var(--border); }
+  .station-row.has-alert { border-color: rgba(248,81,73,.3); background: rgba(248,81,73,.04); }
+  .station-row.has-warn { border-color: rgba(210,153,34,.2); }
+  .station-name { font-size: 12px; font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .col-hdr { font-size: 10px; color: var(--muted); text-align: center; font-weight: 600; }
+  .val {
+    font-size: 12px;
+    font-weight: 600;
+    text-align: center;
+    padding: 3px 0;
+    border-radius: 4px;
+  }
+  .val.danger { background: rgba(248,81,73,.2); color: var(--red); }
+  .val.warn { background: rgba(210,153,34,.2); color: var(--orange); }
+  .val.ok { color: var(--green); }
+  .val.na { color: var(--muted); font-size: 10px; }
+
+  /* ── 설정 ── */
+  .settings-section { margin-bottom: 20px; }
+  .settings-title { font-size: 13px; font-weight: 700; margin-bottom: 10px; color: var(--text2); }
+  .settings-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .settings-item { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 10px 12px; }
+  .settings-label { font-size: 11px; color: var(--text2); margin-bottom: 4px; }
+  .settings-input { width: 100%; background: var(--surface2); border: 1px solid var(--border); color: var(--text); padding: 5px 8px; border-radius: 5px; font-size: 13px; }
+  .settings-input:focus { outline: none; border-color: var(--accent-gw); }
+  .api-input { width: 100%; background: var(--surface2); border: 1px solid var(--border); color: var(--text); padding: 7px 10px; border-radius: 6px; font-size: 12px; font-family: monospace; }
+  .api-input:focus { outline: none; border-color: var(--accent-gw); }
+  .save-btn { margin-top: 10px; background: var(--accent-gw); color: #fff; border: none; padding: 8px 18px; border-radius: 6px; font-size: 13px; font-weight: 600; cursor: pointer; }
+  .reset-btn { margin-top: 10px; margin-left: 8px; background: var(--surface2); color: var(--red); border: 1px solid var(--red); padding: 8px 18px; border-radius: 6px; font-size: 13px; cursor: pointer; }
+
+  /* ── 로딩 ── */
+  .loading { text-align: center; padding: 40px; color: var(--text2); font-size: 14px; }
+  .spinner { display: inline-block; width: 20px; height: 20px; border: 2px solid var(--border); border-top-color: var(--accent-gw); border-radius: 50%; animation: spin .7s linear infinite; vertical-align: middle; margin-right: 8px; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .empty { text-align: center; padding: 30px; color: var(--muted); font-size: 13px; }
+  .col-hdr-row { display: grid; grid-template-columns: 1fr repeat(6, 52px); gap: 4px; padding: 4px 8px; margin-bottom: 2px; }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-row">
+    <div class="brand">
+      <span class="brand-gw">강원</span>
+      <span class="brand-sep"> / </span>
+      <span class="brand-cb">충북</span>
+      <span style="color:var(--text2);font-weight:400;font-size:13px;"> 대기측정망</span>
+    </div>
+    <div class="sub" id="stationCount">—</div>
+    <span class="last-update" id="lastUpdate"></span>
+    <button class="refresh-btn" onclick="refresh(true)">↺ 갱신</button>
+  </div>
+</header>
+
+<div class="tabs">
+  <div class="tab active" onclick="switchTab('alerts')" id="tab-alerts">⚠️ 알림 <span class="tab-badge" id="alertBadge" style="display:none">0</span></div>
+  <div class="tab" onclick="switchTab('grid')" id="tab-grid">📋 전체현황</div>
+  <div class="tab" onclick="switchTab('settings')" id="tab-settings">⚙️ 설정</div>
+</div>
+
+<div class="content">
+  <div id="tab-alerts-content"></div>
+  <div id="tab-grid-content" style="display:none"></div>
+  <div id="tab-settings-content" style="display:none"></div>
+</div>
+
+<!-- 상세보기 모달 -->
+<div id="detail-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:200;align-items:flex-end;justify-content:center;">
+  <div style="background:var(--surface);border:1px solid var(--border);border-radius:16px 16px 0 0;width:100%;max-width:560px;max-height:85vh;overflow-y:auto;padding:8px 20px 32px;">
+    <div style="width:40px;height:4px;background:var(--border);border-radius:2px;margin:10px auto 16px;"></div>
+    <div id="modal-title" style="font-size:18px;font-weight:700;margin-bottom:4px;"></div>
+    <div id="modal-sub" style="font-size:12px;color:var(--text2);margin-bottom:16px;"></div>
+    <div id="modal-grid" style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:16px;"></div>
+    <div style="font-size:11px;color:var(--text2);margin-bottom:8px;">측정 시각</div>
+    <div id="modal-time" style="font-size:13px;margin-bottom:16px;font-family:monospace;"></div>
+    <div id="modal-flags"></div>
+    <button onclick="closeModal()" style="width:100%;background:var(--surface2);border:1px solid var(--border);color:var(--text);padding:10px;border-radius:8px;font-size:14px;cursor:pointer;margin-top:8px;">닫기</button>
+  </div>
+</div>
+
+<script>
+// ══════════════════════════════════════
+//  측정소 정의
+// ══════════════════════════════════════
+const DEFAULT_STATIONS = {
+  '강원': {
+    '속초시': ['금호동'],
+    '철원군': ['갈말읍'],
+    '홍천군': ['홍천읍'],
+  },
+  '충북': {
+    '괴산군': ['괴산읍','감물면'],
+    '보은군': ['보은읍'],
+  }
+};
+
+const DEFAULT_THR = { pm10:80, pm25:35, o3:0.12, no2:0.10, co:25, so2:0.15 };
+
+// ══════════════════════════════════════
+//  설정
+// ══════════════════════════════════════
+function loadCfg() {
+  try { const s = localStorage.getItem('cfg_gwcb'); if (s) return JSON.parse(s); } catch(e) {}
+  return { apiKey: '', proxy: 'https://corsproxy.io/?', thr: { ...DEFAULT_THR } };
+}
+function saveCfg(c) { localStorage.setItem('cfg_gwcb', JSON.stringify(c)); }
+
+let cfg = loadCfg();
+let currentTab = 'alerts';
+let latestData = {};
+let loading = false;
+let autoTimer = null;
+
+// ══════════════════════════════════════
+//  API
+// ══════════════════════════════════════
+async function fetchSido(sidoName) {
+  if (!cfg.apiKey) return [];
+  const base = 'https://apis.data.go.kr/B552584/ArpltnInforInqireSvc/getCtprvnRltmMesureDnsty';
+  const params = new URLSearchParams({ serviceKey: cfg.apiKey, returnType: 'json', numOfRows: '500', pageNo: '1', sidoName, ver: '1.0' });
+  const rawUrl = `${base}?${params}`;
+  const proxy = (cfg.proxy || '').trim();
+  const url = proxy ? proxy + encodeURIComponent(rawUrl) : rawUrl;
+  const res = await fetch(url);
+  const json = await res.json();
+  return json?.response?.body?.items || [];
+}
+
+async function fetchAll() {
+  loading = true;
+  renderTab();
+  try {
+    const [gwItems, cbItems] = await Promise.all([
+      fetchSido('강원'),
+      fetchSido('충북')
+    ]);
+    const all = [...gwItems, ...cbItems];
+    latestData = {};
+    for (const row of all) latestData[row.stationName] = row;
+    console.log('[API stationNames]', Object.keys(latestData).sort());
+    const allDefined = Object.values(DEFAULT_STATIONS).flatMap(c => Object.values(c).flat());
+    const misses = allDefined.filter(n => !latestData[n]);
+    if (misses.length) console.warn('[매핑 실패]', misses);
+    document.getElementById('lastUpdate').textContent = '갱신: ' + new Date().toLocaleTimeString('ko-KR', {hour:'2-digit',minute:'2-digit'});
+  } catch(e) { console.error(e); }
+  loading = false;
+  renderTab();
+  updateBadge();
+}
+
+// ══════════════════════════════════════
+//  값 처리
+// ══════════════════════════════════════
+function pf(v) { const n = parseFloat(v); return isNaN(n) ? null : n; }
+
+function status(key, val) {
+  const t = cfg.thr || DEFAULT_THR;
+  if (val === null) return 'na';
+  const lim = { pm10:t.pm10, pm25:t.pm25, o3:t.o3, no2:t.no2, co:t.co, so2:t.so2 };
+  if (val > (lim[key] ?? Infinity)) return 'danger';
+  if (val > (lim[key] ?? Infinity) * 0.7) return 'warn';
+  return 'ok';
+}
+
+function stationAlert(name) {
+  const d = latestData[name];
+  if (!d) return 'na';
+  const map = { pm10Value:'pm10', pm25Value:'pm25', o3Value:'o3', no2Value:'no2', coValue:'co', so2Value:'so2' };
+  let worst = 'ok';
+  for (const [k, key] of Object.entries(map)) {
+    const s = status(key, pf(d[k]));
+    if (s === 'danger') return 'danger';
+    if (s === 'warn') worst = 'warn';
+    if (s === 'na' && worst === 'ok') worst = 'na';
+  }
+  return worst;
+}
+
+// ══════════════════════════════════════
+//  렌더
+// ══════════════════════════════════════
+function switchTab(t) {
+  currentTab = t;
+  ['alerts','grid','settings'].forEach(x => {
+    document.getElementById('tab-'+x).classList.toggle('active', x===t);
+    document.getElementById('tab-'+x+'-content').style.display = x===t ? '' : 'none';
+  });
+  renderTab();
+}
+function renderTab() {
+  if (currentTab === 'alerts') renderAlerts();
+  else if (currentTab === 'grid') renderGrid();
+  else renderSettings();
+}
+
+function valHtml(raw, key) {
+  const v = pf(raw);
+  const s = status(key, v);
+  return `<div class="val ${s}">${v === null ? '—' : v}</div>`;
+}
+
+function colHdrRow() {
+  return `<div class="col-hdr-row"><div></div>
+    <div class="col-hdr">PM10</div><div class="col-hdr">PM2.5</div>
+    <div class="col-hdr">O₃</div><div class="col-hdr">NO₂</div>
+    <div class="col-hdr">CO</div><div class="col-hdr">SO₂</div></div>`;
+}
+
+function stationRowHtml(name) {
+  const d = latestData[name];
+  const al = stationAlert(name);
+  const rowClass = al === 'danger' ? 'has-alert' : al === 'warn' ? 'has-warn' : '';
+  if (!d) {
+    return `<div class="station-row ${rowClass}">
+      <div class="station-name" style="color:var(--muted)">${name}</div>
+      ${'<div class="val na">—</div>'.repeat(6)}
+    </div>`;
+  }
+  return `<div class="station-row ${rowClass}" onclick="openModal('${name}')" style="cursor:pointer">
+    <div class="station-name">${name}</div>
+    ${valHtml(d.pm10Value,'pm10')}${valHtml(d.pm25Value,'pm25')}
+    ${valHtml(d.o3Value,'o3')}${valHtml(d.no2Value,'no2')}
+    ${valHtml(d.coValue,'co')}${valHtml(d.so2Value,'so2')}
+  </div>`;
+}
+
+function makeChip(raw, key, label) {
+  const v = pf(raw);
+  const s = status(key, v);
+  if (s === 'ok') return '';
+  return `<span class="val-chip ${s === 'na' ? 'na' : s}">${label}: ${v === null ? '—' : v}</span>`;
+}
+
+function renderAlerts() {
+  const el = document.getElementById('tab-alerts-content');
+  if (loading) { el.innerHTML = `<div class="loading"><span class="spinner"></span>불러오는 중...</div>`; return; }
+  if (!cfg.apiKey) { el.innerHTML = `<div class="empty">⚙️ 설정 탭에서 API 키를 먼저 입력해주세요.</div>`; return; }
+
+  const dangers = [], warns = [];
+  for (const [region, cities] of Object.entries(DEFAULT_STATIONS)) {
+    for (const [city, stations] of Object.entries(cities)) {
+      for (const name of stations) {
+        const al = stationAlert(name);
+        if (al === 'danger') dangers.push({ name, region, city });
+        else if (al === 'warn') warns.push({ name, region, city });
+      }
+    }
+  }
+
+  if (dangers.length === 0 && warns.length === 0) {
+    el.innerHTML = `<div class="empty">✅ 현재 임계값 초과 측정소 없음<br><span style="font-size:11px;color:var(--muted)">${new Date().toLocaleTimeString('ko-KR')} 기준</span></div>`;
+    return;
+  }
+
+  let html = '';
+  for (const { name, region, city } of dangers) {
+    const d = latestData[name];
+    html += `<div class="alert-card" onclick="openModal('${name}')" style="cursor:pointer">
+      <div class="alert-title"><span style="color:var(--red)">🔴</span> ${name}
+        <span style="font-size:11px;color:var(--text2)">${region} · ${city}</span></div>
+      <div class="alert-vals">
+        ${makeChip(d?.pm10Value,'pm10','PM10')}${makeChip(d?.pm25Value,'pm25','PM2.5')}
+        ${makeChip(d?.o3Value,'o3','O₃')}${makeChip(d?.no2Value,'no2','NO₂')}
+        ${makeChip(d?.coValue,'co','CO')}${makeChip(d?.so2Value,'so2','SO₂')}
+      </div></div>`;
+  }
+  for (const { name, region, city } of warns) {
+    const d = latestData[name];
+    html += `<div class="alert-card warn" onclick="openModal('${name}')" style="cursor:pointer">
+      <div class="alert-title"><span style="color:var(--orange)">🟡</span> ${name}
+        <span style="font-size:11px;color:var(--text2)">${region} · ${city}</span></div>
+      <div class="alert-vals">
+        ${makeChip(d?.pm10Value,'pm10','PM10')}${makeChip(d?.pm25Value,'pm25','PM2.5')}
+        ${makeChip(d?.o3Value,'o3','O₃')}${makeChip(d?.no2Value,'no2','NO₂')}
+        ${makeChip(d?.coValue,'co','CO')}${makeChip(d?.so2Value,'so2','SO₂')}
+      </div></div>`;
+  }
+  el.innerHTML = html;
+}
+
+function renderGrid() {
+  const el = document.getElementById('tab-grid-content');
+  if (loading) { el.innerHTML = `<div class="loading"><span class="spinner"></span>불러오는 중...</div>`; return; }
+  if (!cfg.apiKey) { el.innerHTML = `<div class="empty">⚙️ 설정 탭에서 API 키를 먼저 입력해주세요.</div>`; return; }
+
+  let html = colHdrRow();
+  let total = 0;
+  for (const [region, cities] of Object.entries(DEFAULT_STATIONS)) {
+    const dotClass = region === '강원' ? 'dot-gw' : 'dot-cb';
+    const count = Object.values(cities).flat().length;
+    total += count;
+    html += `<div class="region-header"><div class="region-dot ${dotClass}"></div>${region} (${count}개소)</div>`;
+    for (const [city, stations] of Object.entries(cities)) {
+      html += `<div class="city-group"><div class="city-label">${city} <span class="city-count">${stations.length}개소</span></div>`;
+      for (const name of stations) html += stationRowHtml(name);
+      html += `</div>`;
+    }
+  }
+  document.getElementById('stationCount').textContent = `강원/충북 ${total}개 측정소`;
+  el.innerHTML = html;
+}
+
+function renderSettings() {
+  const t = cfg.thr || DEFAULT_THR;
+  document.getElementById('tab-settings-content').innerHTML = `
+    <div class="settings-section">
+      <div class="settings-title">에어코리아 API 키</div>
+      <input class="api-input" id="s-apikey" type="password" placeholder="서비스키 입력..." value="${cfg.apiKey||''}">
+    </div>
+    <div class="settings-section">
+      <div class="settings-title">CORS 프록시 <span style="font-size:11px;color:var(--muted);font-weight:400">(브라우저 사용 시 필요 / Android WebView면 비워두세요)</span></div>
+      <input class="api-input" id="s-proxy" type="text" placeholder="https://corsproxy.io/?" value="${cfg.proxy||''}">
+    </div>
+    <div class="settings-section">
+      <div class="settings-title">알림 임계값 (1시간 기준)</div>
+      <div class="settings-grid">
+        <div class="settings-item"><div class="settings-label">PM10 (㎍/㎥)</div><input class="settings-input" id="t-pm10" type="number" value="${t.pm10}"></div>
+        <div class="settings-item"><div class="settings-label">PM2.5 (㎍/㎥)</div><input class="settings-input" id="t-pm25" type="number" value="${t.pm25}"></div>
+        <div class="settings-item"><div class="settings-label">O₃ (ppm)</div><input class="settings-input" id="t-o3" type="number" step="0.01" value="${t.o3}"></div>
+        <div class="settings-item"><div class="settings-label">NO₂ (ppm)</div><input class="settings-input" id="t-no2" type="number" step="0.01" value="${t.no2}"></div>
+        <div class="settings-item"><div class="settings-label">CO (ppm)</div><input class="settings-input" id="t-co" type="number" value="${t.co}"></div>
+        <div class="settings-item"><div class="settings-label">SO₂ (ppm)</div><input class="settings-input" id="t-so2" type="number" step="0.01" value="${t.so2}"></div>
+      </div>
+      <button class="save-btn" onclick="saveSettings()">저장</button>
+      <button class="reset-btn" onclick="resetSettings()">초기화</button>
+    </div>
+    <div style="margin-top:16px;">
+      <button class="save-btn" style="background:var(--surface2);border:1px solid var(--border);font-size:12px;padding:6px 14px;" onclick="showDiag()">🔍 매핑 진단</button>
+    </div>
+    <div id="diag-out" style="margin-top:12px;font-size:11px;color:var(--text2);"></div>
+    <div style="font-size:11px;color:var(--muted);margin-top:16px;">localStorage 키: cfg_gwcb · 자동갱신: 30분마다</div>`;
+}
+
+function showDiag() {
+  const allDefined = Object.values(DEFAULT_STATIONS).flatMap(c => Object.values(c).flat());
+  const misses = allDefined.filter(n => !latestData[n]);
+  const apiNames = Object.keys(latestData).sort();
+  const el = document.getElementById('diag-out');
+  if (!el) return;
+  if (Object.keys(latestData).length === 0) {
+    el.innerHTML = '<span style="color:var(--orange)">아직 API 데이터 없음. 먼저 갱신해주세요.</span>';
+    return;
+  }
+  if (misses.length === 0) {
+    el.innerHTML = '<span style="color:var(--green)">✅ 모든 측정소 매핑 정상</span>';
+    return;
+  }
+  let html = `<div style="color:var(--red);margin-bottom:8px;">⚠️ 매핑 실패 ${misses.length}개:</div>`;
+  for (const m of misses) {
+    const cands = apiNames.filter(a => a.includes(m.slice(0,2)) || m.includes(a.slice(0,2)));
+    html += `<div style="margin-bottom:6px;padding:6px;background:var(--surface2);border-radius:4px;">
+      <b style="color:var(--orange)">${m}</b><br>
+      <span style="color:var(--muted)">후보: ${cands.length ? cands.join(', ') : '없음'}</span>
+    </div>`;
+  }
+  el.innerHTML = html;
+}
+
+function openModal(name) {
+  const d = latestData[name];
+  if (!d) return;
+  let region = '', city = '';
+  for (const [r, cities] of Object.entries(DEFAULT_STATIONS)) {
+    for (const [c, stns] of Object.entries(cities)) {
+      if (stns.includes(name)) { region = r; city = c; }
+    }
+  }
+  document.getElementById('modal-title').textContent = name;
+  document.getElementById('modal-sub').textContent = `${region} · ${city}`;
+  document.getElementById('modal-time').textContent = d.dataTime || '—';
+  const cells = [
+    { k:'PM10',  v:d.pm10Value, u:'㎍/㎥', key:'pm10' },
+    { k:'PM2.5', v:d.pm25Value, u:'㎍/㎥', key:'pm25' },
+    { k:'NO₂',   v:d.no2Value,  u:'ppm',   key:'no2'  },
+    { k:'O₃',    v:d.o3Value,   u:'ppm',   key:'o3'   },
+    { k:'CO',    v:d.coValue,   u:'ppm',   key:'co'   },
+    { k:'SO₂',   v:d.so2Value,  u:'ppm',   key:'so2'  },
+  ];
+  document.getElementById('modal-grid').innerHTML = cells.map(c => {
+    const v = pf(c.v);
+    const s = status(c.key, v);
+    const color = s === 'danger' ? 'color:var(--red)' : s === 'warn' ? 'color:var(--orange)' : '';
+    return `<div style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:10px;text-align:center;">
+      <div style="font-size:10px;color:var(--text2);margin-bottom:4px;">${c.k}</div>
+      <div style="font-size:18px;font-weight:700;${color}">${v ?? '—'}<span style="font-size:10px;color:var(--text2);margin-left:2px;">${c.u}</span></div>
+    </div>`;
+  }).join('');
+  const flagKeys = ['pm10Flag','pm25Flag','no2Flag','o3Flag','coFlag','so2Flag'];
+  const flagLabels = { pm10Flag:'PM10', pm25Flag:'PM2.5', no2Flag:'NO₂', o3Flag:'O₃', coFlag:'CO', so2Flag:'SO₂' };
+  const flags = flagKeys.filter(k => d[k] && d[k] !== '').map(k =>
+    `<div style="background:rgba(248,81,73,.1);border:1px solid rgba(248,81,73,.3);border-radius:6px;padding:6px 10px;margin-bottom:4px;font-size:12px;">
+      <strong>${flagLabels[k]}</strong>: ${d[k]}
+    </div>`
+  ).join('');
+  document.getElementById('modal-flags').innerHTML = flags ? `<div style="font-size:11px;color:var(--text2);margin-bottom:8px;">상태 플래그</div>${flags}` : '';
+  const modal = document.getElementById('detail-modal');
+  modal.style.display = 'flex';
+}
+
+function closeModal() {
+  document.getElementById('detail-modal').style.display = 'none';
+}
+
+document.getElementById('detail-modal').addEventListener('click', function(e) {
+  if (e.target === this) closeModal();
+});
+
+function saveSettings() {
+  cfg.apiKey = document.getElementById('s-apikey').value.trim();
+  cfg.proxy = document.getElementById('s-proxy').value.trim();
+  cfg.thr = { pm10:+document.getElementById('t-pm10').value, pm25:+document.getElementById('t-pm25').value, o3:+document.getElementById('t-o3').value, no2:+document.getElementById('t-no2').value, co:+document.getElementById('t-co').value, so2:+document.getElementById('t-so2').value };
+  saveCfg(cfg);
+  refresh(true);
+}
+
+function resetSettings() {
+  if (!confirm('설정을 초기화하시겠습니까?')) return;
+  localStorage.removeItem('cfg_gwcb');
+  cfg = loadCfg();
+  renderSettings();
+}
+
+function updateBadge() {
+  let cnt = 0;
+  for (const cities of Object.values(DEFAULT_STATIONS))
+    for (const stations of Object.values(cities))
+      for (const name of stations)
+        if (stationAlert(name) === 'danger') cnt++;
+  const badge = document.getElementById('alertBadge');
+  badge.style.display = cnt > 0 ? '' : 'none';
+  badge.textContent = cnt;
+}
+
+function refresh(force) { if (loading && !force) return; fetchAll(); }
+function startAutoRefresh() { if (autoTimer) clearInterval(autoTimer); autoTimer = setInterval(() => refresh(false), 30*60*1000); }
+
+(function init() {
+  let total = 0;
+  for (const cities of Object.values(DEFAULT_STATIONS))
+    for (const stations of Object.values(cities)) total += stations.length;
+  document.getElementById('stationCount').textContent = `강원/충북 ${total}개 측정소`;
+  renderSettings();
+  if (cfg.apiKey) refresh(true);
+  else switchTab('settings');
+  startAutoRefresh();
+})();
+</script>
+</body>
+</html>

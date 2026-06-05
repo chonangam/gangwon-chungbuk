@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <rect width="512" height="512" rx="80" fill="#0d1117"/>
+  <text x="256" y="200" text-anchor="middle" font-size="160" font-family="sans-serif" fill="#e8925a" font-weight="bold">강원</text>
+  <text x="256" y="380" text-anchor="middle" font-size="160" font-family="sans-serif" fill="#a371f7" font-weight="bold">충북</text>
+</svg>
