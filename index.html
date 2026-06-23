@@ -453,6 +453,8 @@ function renderOverview(root){
         const p25Cls=s.over.pm25?'crit':(s.flags.pm25?'miss':'');
         const no2Cls=s.over.no2?'warn':(s.flags.no2?'miss':'');
         const o3Cls=s.over.o3?'warn':(s.flags.o3?'miss':'');
+        const coCls=s.over.co?'warn':(s.flags.co?'miss':'');
+        const so2Cls=s.over.so2?'warn':(s.flags.so2?'miss':'');
         html+=`<div class="stn ${g}" data-station="${s.station}">
           <div class="stn-name">${s.station}</div>
           <span class="stn-grade ${g}">${gradeLabel(g)}</span>
@@ -461,6 +463,8 @@ function renderOverview(root){
             <div><span style="color:var(--text-mute)">P25</span> <span class="v ${p25Cls}">${s.vals.pm25??'—'}</span></div>
             <div><span style="color:var(--text-mute)">NO₂</span> <span class="v ${no2Cls}">${s.vals.no2?.toFixed(3)??'—'}</span></div>
             <div><span style="color:var(--text-mute)">O₃</span> <span class="v ${o3Cls}">${s.vals.o3?.toFixed(3)??'—'}</span></div>
+            <div><span style="color:var(--text-mute)">CO</span> <span class="v ${coCls}">${s.vals.co?.toFixed(1)??'—'}</span></div>
+            <div><span style="color:var(--text-mute)">SO₂</span> <span class="v ${so2Cls}">${s.vals.so2?.toFixed(3)??'—'}</span></div>
           </div>
         </div>`;
       }
